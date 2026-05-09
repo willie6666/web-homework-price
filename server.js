@@ -12,12 +12,7 @@ const db = new sqlite3.Database(dbPath);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const seedRows = [
-  ["2026-05-01", "Kingston FURY Beast DDR5 6000 32GB", 13482, "Kingston", "DDR5", 32, "https://24h.pchome.com.tw/"],
-  ["2026-05-03", "ADATA XPG Lancer Blade DDR5 5600 16GB", 6599, "ADATA", "DDR5", 16, "https://24h.pchome.com.tw/"],
-  ["2026-05-05", "Crucial DDR5 5600 32GB", 13229, "Crucial", "DDR5", 32, "https://24h.pchome.com.tw/"],
-  ["2026-05-07", "UMAX DDR4 2666 16GB 筆記型記憶體", 4450, "UMAX", "DDR4", 16, "https://24h.pchome.com.tw/"]
-];
+const seedRows = require("./seed-prices.json");
 
 db.serialize(() => {
   db.run(`
@@ -54,7 +49,16 @@ db.serialize(() => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    seedRows.forEach((entry) => statement.run([...entry.slice(0, 6), inferModuleType(entry[1]), entry[6]]));
+    seedRows.forEach((entry) => statement.run([
+      entry.date,
+      entry.product_name,
+      entry.price,
+      entry.brand,
+      entry.memory_type,
+      entry.capacity_gb,
+      entry.module_type || inferModuleType(entry.product_name),
+      entry.source_url
+    ]));
     statement.finalize();
   });
 });
