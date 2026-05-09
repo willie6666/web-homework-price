@@ -28,6 +28,12 @@ npm start
 http://localhost:3000
 ```
 
+可用環境變數指定監聽位址與 port：
+
+```bash
+HOST=0.0.0.0 PORT=80 npm start
+```
+
 ## 專案結構
 
 ```text

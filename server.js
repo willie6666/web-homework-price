@@ -5,6 +5,7 @@ const cheerio = require("cheerio");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || "0.0.0.0";
 const dbPath = path.join(__dirname, "data.db");
 const db = new sqlite3.Database(dbPath);
 
@@ -345,6 +346,6 @@ app.post("/api/fetch-twbuyers", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`RAM Pulse running at http://localhost:${port}`);
+app.listen(port, host, () => {
+  console.log(`RAM Pulse running at http://${host}:${port}`);
 });
