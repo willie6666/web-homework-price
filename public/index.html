@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAM Pulse | 記憶體價格追蹤</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+    <script type="module" src="/three-scene.js"></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="site-noise" aria-hidden="true"></div>
+    <main class="page-shell">
+      <section class="hero reveal">
+        <div class="hero-copy">
+          <span class="eyebrow">RAM PRICE OBSERVATORY</span>
+          <h1>RAM Pulse</h1>
+          <p>追蹤記憶體價格，觀察你的硬體通膨。用日期、品牌、容量與 GB 單價，把 PChome 參考價格整理成可展示的價格儀表板。</p>
+          <div class="hero-actions">
+            <a class="control-button" href="#price-form">新增價格<span>↘</span></a>
+            <a class="ghost-button" href="#history-table">查看紀錄</a>
+          </div>
+        </div>
+        <div class="ram-stage-shell">
+          <div class="ram-stage-core">
+            <canvas id="ram-canvas" aria-label="3D RAM module animation"></canvas>
+            <div class="stage-readout">
+              <span>Signal</span>
+              <strong id="signal-readout">IDLE</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-grid reveal" aria-label="今日觀測">
+        <article><span>追蹤商品</span><strong id="metric-count">0</strong><small>records</small></article>
+        <article><span>平均價格</span><strong id="metric-average">$0</strong><small>NTD</small></article>
+        <article><span>歷史低點</span><strong id="metric-low">$0</strong><small>lowest</small></article>
+        <article><span>歷史高點</span><strong id="metric-high">$0</strong><small>highest</small></article>
+      </section>
+
+      <section class="workspace-grid">
+        <div class="panel-shell form-panel reveal">
+          <div class="panel-core">
+            <div class="section-heading">
+              <span class="eyebrow">INPUT NODE</span>
+              <h2>新增價格資料</h2>
+            </div>
+            <form id="price-form" novalidate>
+              <div class="field-group wide">
+                <label for="product_name">商品名稱</label>
+                <input id="product_name" name="product_name" type="text" placeholder="Kingston FURY Beast DDR5 6000 32GB" required />
+              </div>
+              <div class="field-grid">
+                <div class="field-group">
+                  <label for="date">日期</label>
+                  <input id="date" name="date" type="date" required />
+                </div>
+                <div class="field-group">
+                  <label for="price">價格</label>
+                  <input id="price" name="price" type="number" min="1" placeholder="13482" required />
+                </div>
+                <div class="field-group">
+                  <label for="brand">品牌</label>
+                  <input id="brand" name="brand" type="text" placeholder="Kingston" />
+                </div>
+                <div class="field-group">
+                  <label for="capacity_gb">容量 GB</label>
+                  <input id="capacity_gb" name="capacity_gb" type="text" inputmode="numeric" placeholder="32 或 16*2" />
+                </div>
+                <div class="field-group">
+                  <label for="memory_type">DDR 類型</label>
+                  <select id="memory_type" name="memory_type">
+                    <option value="DDR5">DDR5</option>
+                    <option value="DDR4">DDR4</option>
+                    <option value="DDR3">DDR3</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="module_type">用途</label>
+                  <select id="module_type" name="module_type">
+                    <option value="桌上型">桌上型</option>
+                    <option value="筆記型">筆記型</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="source_url">來源網址</label>
+                  <input id="source_url" name="source_url" type="url" placeholder="https://24h.pchome.com.tw/..." />
+                </div>
+                <div class="field-group">
+                  <label for="twbuyers-months">歷史月數</label>
+                  <input id="twbuyers-months" type="number" min="1" max="36" value="12" />
+                </div>
+              </div>
+              <p id="form-error" class="inline-error" role="alert"></p>
+              <div class="form-actions">
+                <button class="control-button" type="submit">寫入資料<span>+</span></button>
+                <button class="import-button" id="fetch-twbuyers" type="button">匯入 TWBuyers 歷史<span>↧</span></button>
+                <button class="ghost-button" id="fetch-pchome" type="button">抓取 PChome</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel-shell insight-panel reveal">
+          <div class="panel-core">
+            <div class="section-heading">
+              <span class="eyebrow">ANALYSIS NODE</span>
+              <h2>觀測摘要</h2>
+            </div>
+            <div class="insight-board">
+              <article class="insight-primary">
+                <span>最佳 GB 單價</span>
+                <strong id="insight-best-gb">-</strong>
+                <small id="insight-best-product">尚無資料</small>
+              </article>
+              <div class="insight-minis">
+                <article>
+                  <span>DDR5 資料數</span>
+                  <strong id="insight-ddr5-count">0</strong>
+                </article>
+                <article>
+                  <span>商品線數</span>
+                  <strong id="insight-product-lines">0</strong>
+                </article>
+              </div>
+              <div class="insight-callout">
+                <span>TWBuyers Link</span>
+                <p>貼上 PChome 商品網址後，可匯入該商品在 TWBuyers 保存的歷史價格，讓下方趨勢圖直接產生多日期線圖。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-shell chart-panel reveal">
+        <div class="panel-core">
+          <div class="section-heading chart-heading">
+            <div>
+              <span class="eyebrow">PRICE WAVE</span>
+              <h2>價格趨勢</h2>
+              <p class="chart-note">圖表顯示下方已勾選的商品。取消勾選商品即可從趨勢圖隱藏，使用全選可一次顯示所有目前列表商品。</p>
+            </div>
+            <span id="chart-selected-count" class="row-count">0 selected</span>
+          </div>
+          <div class="chart-frame">
+            <canvas id="price-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-shell table-panel reveal">
+        <div class="panel-core">
+          <div class="section-heading split-heading">
+            <div>
+              <span class="eyebrow">HISTORY BUS</span>
+              <h2>歷史價格資料</h2>
+            </div>
+            <span id="row-count" class="row-count">0 rows</span>
+          </div>
+          <div class="filters-core table-toolbar">
+            <div class="field-group search-field">
+              <label for="search-q">搜尋商品 / 品牌</label>
+              <input id="search-q" type="search" placeholder="輸入 Kingston、DDR5、UMAX..." />
+            </div>
+            <div class="field-group">
+              <label for="filter-type">類型</label>
+              <select id="filter-type">
+                <option value="">全部</option>
+                <option value="DDR5">DDR5</option>
+                <option value="DDR4">DDR4</option>
+                <option value="DDR3">DDR3</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="filter-brand">品牌</label>
+              <select id="filter-brand"><option value="">全部</option></select>
+            </div>
+            <div class="field-group">
+              <label for="filter-module">用途</label>
+              <select id="filter-module">
+                <option value="">全部</option>
+                <option value="桌上型">桌上型</option>
+                <option value="筆記型">筆記型</option>
+              </select>
+            </div>
+            <div class="field-group range-fields">
+              <label>價格區間</label>
+              <div>
+                <input id="filter-min" type="number" min="0" placeholder="最低" />
+                <input id="filter-max" type="number" min="0" placeholder="最高" />
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="history-table">
+              <thead>
+                <tr>
+                  <th><label class="check-cell"><input id="select-all-products" type="checkbox" checked /> 全選</label></th>
+                  <th>商品名稱</th>
+                  <th>最新價格</th>
+                  <th>紀錄數</th>
+                  <th>類型</th>
+                  <th>用途</th>
+                  <th>來源</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="price-rows"></tbody>
+            </table>
+          </div>
+          <div id="empty-state" class="empty-state" hidden>
+            <strong>尚未建立觀測資料</strong>
+            <p>新增第一筆 RAM 價格後，表格與趨勢圖會立即更新。</p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
