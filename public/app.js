@@ -20,8 +20,7 @@ const filters = {
   type: document.querySelector("#filter-type"),
   brand: document.querySelector("#filter-brand"),
   module: document.querySelector("#filter-module"),
-  min: document.querySelector("#filter-min"),
-  max: document.querySelector("#filter-max")
+  capacity: document.querySelector("#filter-capacity")
 };
 
 const currency = new Intl.NumberFormat("zh-TW", {
@@ -152,6 +151,7 @@ async function loadPrices() {
   });
   state.selectionInitialized = true;
   syncBrandOptions();
+  syncCapacityOptions();
   applyFilters();
 }
 
@@ -160,8 +160,7 @@ function applyFilters() {
   const type = filters.type.value;
   const brand = filters.brand.value;
   const module = filters.module.value;
-  const min = Number(filters.min.value || 0);
-  const max = Number(filters.max.value || 0);
+  const capacity = Number(filters.capacity.value || 0);
 
   state.filtered = state.prices.filter((row) => {
     const searchable = `${row.product_name} ${row.brand} ${getMemoryType(row)} ${getModuleType(row)}`.toLowerCase();
@@ -169,8 +168,7 @@ function applyFilters() {
     if (type && getMemoryType(row) !== type) return false;
     if (brand && row.brand !== brand) return false;
     if (module && getModuleType(row) !== module) return false;
-    if (min && row.price < min) return false;
-    if (max && row.price > max) return false;
+    if (capacity && getCapacity(row) !== capacity) return false;
     return true;
   });
 
@@ -184,6 +182,13 @@ function syncBrandOptions() {
   const brands = [...new Set(state.prices.map((row) => row.brand).filter(Boolean))].sort();
   brandFilter.innerHTML = `<option value="">全部</option>${brands.map((brand) => `<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`).join("")}`;
   brandFilter.value = brands.includes(selected) ? selected : "";
+}
+
+function syncCapacityOptions() {
+  const selected = filters.capacity.value;
+  const capacities = [...new Set([8, 16, 32, 64, ...state.prices.map(getCapacity).filter(Boolean)])].sort((a, b) => a - b);
+  filters.capacity.innerHTML = `<option value="">全部</option>${capacities.map((capacity) => `<option value="${capacity}">${capacity}GB</option>`).join("")}`;
+  filters.capacity.value = capacities.includes(Number(selected)) ? selected : "";
 }
 
 function renderMetrics() {

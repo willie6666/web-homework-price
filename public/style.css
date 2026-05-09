@@ -371,8 +371,6 @@ input:focus, select:focus {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.025);
 }
-.range-fields > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 960px; }
 th, td { padding: 15px 12px; border-bottom: 1px solid var(--line); text-align: left; }
