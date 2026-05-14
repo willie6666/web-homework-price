@@ -3,7 +3,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.m
 const canvas = document.querySelector("#ram-canvas");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-if (canvas && !reducedMotion) {
+if (canvas) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
